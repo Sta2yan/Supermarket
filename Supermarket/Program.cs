@@ -7,16 +7,24 @@ namespace Supermarket
     {
         static void Main(string[] args)
         {
-            Random random = new Random();
-            int maximumMoney = 2500;
-            int minimumMoney = 1000;
-            int maximumClients = 15;
-            int minimumClients = 3;
-            Queue<Client> clients = new Queue<Client>();
+            Supermarket supermarket = new Supermarket();
+            supermarket.ServeCustomers();
+        }
+    }
 
-            for (int i = 0; i < random.Next(minimumClients, maximumClients); i++)
+    class Supermarket
+    {
+        private Random _random = new Random();
+        private int _maximumMoney = 2500;
+        private int _minimumMoney = 1000;
+        private int _maximumClients = 15;
+        private int _minimumClients = 3;
+        
+        public void ServeCustomers(Queue<Client> clients = null)
+        {
+            if (clients == null)
             {
-                clients.Enqueue(new Client(random.Next(minimumMoney, maximumMoney)));
+                clients = SetQueueClients();
             }
 
             while (clients.Count > 0)
@@ -24,12 +32,24 @@ namespace Supermarket
                 Client client = clients.Dequeue();
                 client.ShowInfo();
                 Console.WriteLine();
-                client.Pay();
+                client.Buy();
                 Console.ReadKey();
                 Console.Clear();
             }
 
             Console.WriteLine("Магазин пустует ...");
+        }
+
+        private Queue<Client> SetQueueClients()
+        {
+            Queue<Client> clients = new Queue<Client>();
+
+            for (int i = 0; i < _random.Next(_minimumClients, _maximumClients); i++)
+            {
+                clients.Enqueue(new Client(_random.Next(_minimumMoney, _maximumMoney)));
+            }
+
+            return clients;
         }
     }
 
@@ -46,23 +66,21 @@ namespace Supermarket
         {
             Id = ++_ids;
             Money = money;
-            _products = GetListProduct();
+            _products = SetListProduct();
         }
 
-        public void Pay()
+        public void Buy()
         {
-            int moneyToPay;
-
-            while (CheckPayment(out moneyToPay) == false)
+            while (CheckPayment() == false)
             {
-                Console.WriteLine($"К оплате - {moneyToPay}");
+                Console.WriteLine($"К оплате - {GetAmountPurchases()}");
                 int deleteIndex = _random.Next(0, _products.Count);
                 Console.WriteLine($"Не хватает средств. Удален товар: {_products[deleteIndex].Name} по цене {_products[deleteIndex].Price}");
                 _products.RemoveAt(deleteIndex);
             }
 
-            Money -= moneyToPay;
-            Console.WriteLine($"\nОплата прошла успешно! Чек - {moneyToPay} | Осталось - {Money}");
+            Money -= GetAmountPurchases();
+            Console.WriteLine($"\nОплата прошла успешно! Чек - {GetAmountPurchases()} | Осталось - {Money}");
             _products.Clear();
         }
 
@@ -77,26 +95,24 @@ namespace Supermarket
             }
         }
 
-        private bool CheckPayment(out int moneyToPay)
+        private bool CheckPayment()
         {
-            moneyToPay = 0;
+            return Money >= GetAmountPurchases();
+        }
+
+        private int GetAmountPurchases()
+        {
+            int moneyToPay = 0;
 
             for (int i = 0; i < _products.Count; i++)
             {
                 moneyToPay += _products[i].Price;
             }
 
-            if (Money >= moneyToPay)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return moneyToPay;
         }
 
-        private List<Product> GetListProduct()
+        private List<Product> SetListProduct()
         {
             List<Product> products = new List<Product>();
             int maximumPrice = 200;
